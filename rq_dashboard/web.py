@@ -253,7 +253,7 @@ def escape_format_instance_list(url_list):
 
 @blueprint.route("/", defaults={"instance_number": 0})
 @blueprint.route("/<int:instance_number>/")
-@blueprint.route("/<int:instance_number>/view")
+#@blueprint.route("/<int:instance_number>/view/")
 @blueprint.route("/<int:instance_number>/view/queues")
 def queues_overview(instance_number):
     r = make_response(
