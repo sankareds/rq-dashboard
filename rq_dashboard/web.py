@@ -305,7 +305,7 @@ def workers_overview(instance_number):
     defaults={
         "queue_name": None,
         "registry_name": "queued",
-        "per_page": "8",
+        "per_page": "100",
         "page": "1",
     },
 )
