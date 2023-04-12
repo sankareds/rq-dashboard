@@ -20,6 +20,7 @@ import os
 import re
 from functools import wraps
 from math import ceil
+import rq
 
 import arrow
 from flask import (
@@ -40,6 +41,8 @@ from rq import (
     push_connection,
     requeue_job,
 )
+from rq.command import send_stop_job_command, send_command
+from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.registry import (
     DeferredJobRegistry,
@@ -537,7 +540,16 @@ def job_info(instance_number, job_id):
 @jsonify
 def list_workers(instance_number):
     def serialize_queue_names(worker):
+
         return [q.name for q in worker.queues]
+
+    for worker in Worker.all():
+        job_id = worker.get_current_job_id()
+        if job_id:
+            try:
+                Job.fetch(job_id, connection=current_app.redis_conn)
+            except NoSuchJobError:
+                send_command(current_app.redis_conn, worker.name, 'stop-job', job_id=job_id)
 
     workers = sorted(
         (
