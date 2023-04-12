@@ -18,6 +18,7 @@ provides the option to require HTTP Basic Auth in a few lines of code.
 """
 import os
 import re
+import time
 from functools import wraps
 from math import ceil
 import rq
@@ -41,7 +42,7 @@ from rq import (
     push_connection,
     requeue_job,
 )
-from rq.command import send_stop_job_command, send_command
+from rq.command import send_stop_job_command, send_command, send_kill_horse_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.registry import (
@@ -547,9 +548,19 @@ def list_workers(instance_number):
         job_id = worker.get_current_job_id()
         if job_id:
             try:
-                Job.fetch(job_id, connection=current_app.redis_conn)
+                worker.job_class.fetch(job_id, current_app.redis_conn, worker.serializer)
             except NoSuchJobError:
+                print(f"{job_id} not found, sending stop job command")
                 send_command(current_app.redis_conn, worker.name, 'stop-job', job_id=job_id)
+                try:
+                    time.sleep(5)
+                    n_job_id = worker.get_current_job_id()
+                    if job_id == n_job_id:
+                        print(f"still {job_id} found, sending kill command")
+                        send_kill_horse_command(current_app.redis_conn, worker.name)
+                except Exception:
+                    pass
+
 
     workers = sorted(
         (
