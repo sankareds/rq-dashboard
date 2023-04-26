@@ -1,3 +1,3 @@
 # flake8: noqa
-from . import default_settings
-from .web import blueprint
+from rq_dashboard import default_settings
+from rq_dashboard.web import blueprint
